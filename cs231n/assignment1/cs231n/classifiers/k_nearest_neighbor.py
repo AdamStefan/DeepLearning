@@ -82,8 +82,7 @@ class KNearestNeighbor(object):
     num_train = self.X_train.shape[0]
     dists = np.zeros((num_test, num_train))
     for i in range(num_test):
-      current_test = X[i]
-      dists[i] = np.sqrt(np.sum(np.power(self.X_train - current_test, 2), axis=1))
+      dists[i] = np.sqrt(np.sum(np.power(self.X_train - X[i], 2), axis=1))
     return dists
 
   def compute_distances_no_loops(self, X):
@@ -93,10 +92,6 @@ class KNearestNeighbor(object):
 
     Input / Output: Same as compute_distances_two_loops
     """
-
-    # x_train_bcast = self.X_train[:, np.newaxis]
-    # dists = np.sqrt(np.sum(np.power(x_train_bcast - X, 2), axis=2))
-    # return dists.transpose()
 
     num_test = X.shape[0]
     num_train = self.X_train.shape[0]
@@ -130,30 +125,10 @@ class KNearestNeighbor(object):
     for i in list(range(num_test)):
       # A list of length k storing the labels of the k nearest neighbors to
       # the ith test point.
-      distancesForXTestItem = dists[i]
       sortedIndexes = self.y_train[np.argsort(dists[i])[:k]]
       values, counts = np.unique(sortedIndexes,return_counts=True)
       ind = np.argmax(counts)
       y_pred[i] = values[ind]
-      #########################################################################
-      # TODO:                                                                 #
-      # Use the distance matrix to find the k nearest neighbors of the ith    #
-      # testing point, and use self.y_train to find the labels of these       #
-      # neighbors. Store these labels in closest_y.                           #
-      # Hint: Look up the function numpy.argsort.                             #
-      #########################################################################
-      #pass
-      #########################################################################
-      # TODO:                                                                 #
-      # Now that you have found the labels of the k nearest neighbors, you    #
-      # need to find the most common label in the list closest_y of labels.   #
-      # Store this label in y_pred[i]. Break ties by choosing the smaller     #
-      # label.                                                                #
-      #########################################################################
-      #pass
-      #########################################################################
-      #                           END OF YOUR CODE                            # 
-      #########################################################################
 
     return y_pred
 
