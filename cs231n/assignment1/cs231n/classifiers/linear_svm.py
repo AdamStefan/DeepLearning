@@ -69,29 +69,23 @@ def svm_loss_vectorized(W, X, y, reg):
   tScores = np.maximum(0, tScores)
   loss = np.sum(tScores)
 
-  for i in range(num_train):
-    for j in range(num_classes):
-      if j == y[i]:
-        continue
-      margin = tScores[i,j]
-      if margin > 0:
-        dW[:, j] += X[i]
-        dW[:, y[i]] -= X[i]
 
 
   for j in range(num_classes):
     indexesNonZeros = np.where(tScores[:,j]>0)
+    xItems = X[indexesNonZeros]
+    yItems = y[indexesNonZeros]
+    dataSum = np.sum(xItems,axis=0)
+    dW[:,j]+= dataSum
 
-    dW[:,j]= np.sum(X[indexesNonZeros],axis=1)
-    dW[:, y[i]] = - np.sum(X[indexesNonZeros],axis=1)
+    # values,groups = sum_by_group(xItems,yItems)
+    # dW[:,groups]-=values.T
 
-    for i in range(num_train):
-      if j == y[i]:
-        continue
-      margin = tScores[i, j]
-      if margin > 0:
-        dW[:, j] += X[i]
-        dW[:, y[i]] -= X[i]
+    groups = np.unique(yItems)
+    for idx,group in enumerate(groups):
+      indexesToSum = np.where(yItems == group)
+      dW[:,group] -= np.sum(xItems[indexesToSum], axis=0)
+
 
   # Right now the loss is a sum over all training examples, but we want it
   # to be an average instead so we divide by num_train.
@@ -103,3 +97,16 @@ def svm_loss_vectorized(W, X, y, reg):
   loss += 0.5 * reg * np.sum(W * W)
 
   return loss, dW
+
+
+def sum_by_group(values, groups):
+    order = np.argsort(groups)
+    groups = groups[order]
+    values = values[order]
+    values = np.cumsum(values,axis=0)
+    index = np.ones(len(groups), 'bool')
+    index[:-1] = groups[1:] != groups[:-1]
+    values = values[index]
+    groups = groups[index]
+    values[1:] = values[1:] - values[:-1]
+    return values, groups
