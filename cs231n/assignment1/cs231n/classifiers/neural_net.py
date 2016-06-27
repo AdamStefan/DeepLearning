@@ -69,45 +69,101 @@ class TwoLayerNet(object):
 
     # Compute the forward pass
     scores = None
-    #############################################################################
-    # TODO: Perform the forward pass, computing the class scores for the input. #
-    # Store the result in the scores variable, which should be an array of      #
-    # shape (N, C).                                                             #
-    #############################################################################
-    pass
-    #############################################################################
-    #                              END OF YOUR CODE                             #
-    #############################################################################
-    
-    # If the targets are not given then jump out, we're done
+    # first layer pass
+    scoresW1 = X.dot(W1) + b1
+
+
+    # second Layer pass
+
+    # 2. ReLU for the above scores
+    X1_Relu = np.maximum(0, scoresW1)
+
+
+    #compute the second layer score
+    scoresW2 = X1_Relu.dot(W2) + b2
+
+    scores = scoresW2 # NRows of C size
+    # print(scores.shape)
+
     if y is None:
       return scores
 
+
+    # do the softmax
+
+    scaleFactorW2 = np.max(scoresW2, axis=1, keepdims=True)
+    scoresW2 = scoresW2 - scaleFactorW2
+    sumsW2 = np.sum(np.exp(scoresW2), axis=1)[:, np.newaxis]
+
+    #end second Layer pass
+
+
     # Compute the loss
     loss = None
-    #############################################################################
-    # TODO: Finish the forward pass, and compute the loss. This should include  #
-    # both the data loss and L2 regularization for W1 and W2. Store the result  #
-    # in the variable loss, which should be a scalar. Use the Softmax           #
-    # classifier loss. So that your results match ours, multiply the            #
-    # regularization loss by 0.5                                                #
-    #############################################################################
-    pass
-    #############################################################################
-    #                              END OF YOUR CODE                             #
-    #############################################################################
+
+    loss = - np.sum(scoresW2[range(N), y]) + np.sum(np.log(sumsW2))
+    loss /= N
+    loss += 0.5 * reg * (np.sum(W2 * W2) + np.sum(W1 * W1))
+
+    scoresW2 = (np.exp(scoresW2) / sumsW2)
 
     # Backward pass: compute gradients
     grads = {}
-    #############################################################################
-    # TODO: Compute the backward pass, computing the derivatives of the weights #
-    # and biases. Store the results in the grads dictionary. For example,       #
-    # grads['W1'] should store the gradient on W1, and be a matrix of same size #
-    #############################################################################
-    pass
-    #############################################################################
-    #                              END OF YOUR CODE                             #
-    #############################################################################
+
+    #compute the second layer
+
+    correct_scores_2 = np.zeros_like(scores) # NRows wiht C size
+    correct_scores_2[range(N), y] = 1
+    dScores_Correct = scoresW2 - correct_scores_2 # NRows with C size
+
+    dW2 = X1_Relu.T.dot(dScores_Correct) # dW2 = dL/dW
+
+    dW2 /= N
+    dW2 += W2 * reg
+    grads['W2'] = dW2
+
+    dW2Output = np.zeros((N,W2.shape[0]))  # dW2Output = dL/Dx
+
+    for i in range(N):
+      for j in range(W2.shape[0]):
+          tmpsum = np.sum(scoresW2[i,:] * W2[j,:]) - W2[j,y[i]]
+          dW2Output[i,j] +=tmpsum
+
+
+    dB2 = np.sum(dScores_Correct, axis=0)/ N
+
+
+    #end compute the second layer
+
+    #compute the Relu backward layer
+
+    dRelu = np.zeros_like(scoresW1) # N Rows D
+    indexes = np.where(scoresW1>0)
+    dRelu[indexes] = 1  # it behaves like a gradient rooter
+    dRelu = dRelu * dW2Output
+
+    #end compute the Relu backward layer
+
+    # compute the fist backward layer
+
+    dW1 = X.T.dot(dRelu)
+
+    dW1 /= N
+    dW1 += W1 * reg
+
+    db1 = np.sum(dRelu, axis=0)
+    db1 /= N
+
+    #end compute the first backward layer
+
+
+    #end compute the backward layer
+
+
+    grads['W1'] = dW1
+    grads['b2'] = dB2
+    grads['b1'] = db1
+
 
     return loss, grads
 
@@ -140,7 +196,7 @@ class TwoLayerNet(object):
     train_acc_history = []
     val_acc_history = []
 
-    for it in xrange(num_iters):
+    for it in range(num_iters):
       X_batch = None
       y_batch = None
 
@@ -169,7 +225,7 @@ class TwoLayerNet(object):
       #########################################################################
 
       if verbose and it % 100 == 0:
-        print 'iteration %d / %d: loss %f' % (it, num_iters, loss)
+        print ('iteration %d / %d: loss %f' % (it, num_iters, loss))
 
       # Every epoch, check train and val accuracy and decay learning rate.
       if it % iterations_per_epoch == 0:
