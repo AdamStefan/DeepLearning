@@ -72,18 +72,14 @@ class TwoLayerNet(object):
     # first layer pass
     scoresW1 = X.dot(W1) + b1
 
-
     # second Layer pass
 
     # 2. ReLU for the above scores
     X1_Relu = np.maximum(0, scoresW1)
 
-
     #compute the second layer score
     scoresW2 = X1_Relu.dot(W2) + b2
-
     scores = scoresW2 # NRows of C size
-    # print(scores.shape)
 
     if y is None:
       return scores
@@ -122,16 +118,8 @@ class TwoLayerNet(object):
     dW2 += W2 * reg
     grads['W2'] = dW2
 
-    dW2Output = np.zeros((N,W2.shape[0]))  # dW2Output = dL/Dx
-
-    for i in range(N):
-      for j in range(W2.shape[0]):
-          tmpsum = np.sum(scoresW2[i,:] * W2[j,:]) - W2[j,y[i]]
-          dW2Output[i,j] +=tmpsum
-
-
+    dW2Output = dScores_Correct.dot(W2.T)
     dB2 = np.sum(dScores_Correct, axis=0)/ N
-
 
     #end compute the second layer
 
@@ -196,33 +184,24 @@ class TwoLayerNet(object):
     train_acc_history = []
     val_acc_history = []
 
-    for it in range(num_iters):
-      X_batch = None
-      y_batch = None
+    W1, b1 = self.params['W1'], self.params['b1']
+    W2, b2 = self.params['W2'], self.params['b2']
+    N, D = X.shape
 
-      #########################################################################
-      # TODO: Create a random minibatch of training data and labels, storing  #
-      # them in X_batch and y_batch respectively.                             #
-      #########################################################################
-      pass
-      #########################################################################
-      #                             END OF YOUR CODE                          #
-      #########################################################################
+    for it in range(num_iters):
+      randomIndexes = np.random.choice(X.shape[0], batch_size)
+      X_batch = X[randomIndexes]
+      y_batch = y[randomIndexes]
+
 
       # Compute loss and gradients using the current minibatch
       loss, grads = self.loss(X_batch, y=y_batch, reg=reg)
       loss_history.append(loss)
+      self.params['W2'] -= grads["W2"]*  learning_rate
+      self.params['W1'] -= grads["W1"] * learning_rate
+      self.params['b1'] -= grads["b1"] * learning_rate
+      self.params['b2'] -= grads["b2"] * learning_rate
 
-      #########################################################################
-      # TODO: Use the gradients in the grads dictionary to update the         #
-      # parameters of the network (stored in the dictionary self.params)      #
-      # using stochastic gradient descent. You'll need to use the gradients   #
-      # stored in the grads dictionary defined above.                         #
-      #########################################################################
-      pass
-      #########################################################################
-      #                             END OF YOUR CODE                          #
-      #########################################################################
 
       if verbose and it % 100 == 0:
         print ('iteration %d / %d: loss %f' % (it, num_iters, loss))
@@ -232,6 +211,7 @@ class TwoLayerNet(object):
         # Check accuracy
         train_acc = (self.predict(X_batch) == y_batch).mean()
         val_acc = (self.predict(X_val) == y_val).mean()
+
         train_acc_history.append(train_acc)
         val_acc_history.append(val_acc)
 
@@ -259,15 +239,11 @@ class TwoLayerNet(object):
       the elements of X. For all i, y_pred[i] = c means that X[i] is predicted
       to have class c, where 0 <= c < C.
     """
-    y_pred = None
+    scores = self.loss(X)
+    y_pred = np.argmax(scores,axis=1)
+    # print (scores.shape,y_pred.shape)
 
-    ###########################################################################
-    # TODO: Implement this function; it should be VERY simple!                #
-    ###########################################################################
-    pass
-    ###########################################################################
-    #                              END OF YOUR CODE                           #
-    ###########################################################################
+
 
     return y_pred
 
