@@ -284,9 +284,12 @@ class FullyConnectedNet(object):
 
     loss += 0.5 * self.reg * regParamSum
 
+
     cache = cachedData[str(self.num_layers)]
+    w = self.params['W' + str(self.num_layers)]
 
     dx, dw, db = affine_backward(dx, cache)
+    dw += w * self.reg
     grads["W"+str(self.num_layers)] = dw
     grads["b" + str(self.num_layers)] = db
 
