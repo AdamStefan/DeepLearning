@@ -143,7 +143,7 @@ def batchnorm_forward(x, gamma, beta, bn_param):
 
     sample_mean = np.mean(x,axis=0)
     sample_var = np.var(x,axis=0)
-    xInput = (x - sample_mean)/(np.sqrt(sample_var) + eps)
+    xInput = (x - sample_mean)/(np.sqrt(sample_var + eps) )
     out = gamma * xInput + beta
 
     running_mean = momentum * running_mean + (1 - momentum) * sample_mean
@@ -205,11 +205,25 @@ def batchnorm_backward(dout, cache):
   sample_mean = np.mean(x, axis=0)
   sample_var = np.var(x, axis=0)
 
-  dx = (dout /sample_var) * gamma
-  xInput = (x - sample_mean) / (np.sqrt(sample_var) + eps)
-  dgamma = np.sum(xInput * dout, axis=0)
-  dbeta = np.ones(x.shape[1])
+  coeff = (np.sqrt(sample_var + eps) )
+  print (coeff.shape)
 
+  dx = (dout /coeff) * gamma
+  N = x.shape[0]
+
+  dldVar =  np.sum(dout * gamma *  (x - sample_mean) * (-0.5) * np.power((sample_var+ eps),-1.5),axis=0)
+  dldMean = np.sum(-dout * gamma/coeff, axis=0) + dldVar * (-2/N) * np.sum(x-sample_mean,axis=0)
+  # (dldVar * 2 * (x - sample_mean) / N) + (dldMean / N) I don't understand why is this term
+  dx = dx + (dldVar * 2 * (x - sample_mean) / N) + (dldMean / N)
+
+
+
+  xInput = (x - sample_mean) / (np.sqrt(sample_var + eps) )
+
+  dgamma = np.sum(xInput * dout, axis=0)
+  dbeta = np.sum(dout,axis=0)
+
+  print(x.shape,dx.shape)
 
   return dx, dgamma, dbeta
 
