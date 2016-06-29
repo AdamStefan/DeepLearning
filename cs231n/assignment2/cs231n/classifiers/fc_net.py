@@ -153,14 +153,14 @@ class FullyConnectedNet(object):
     self.dtype = dtype
     self.params = {}
 
-    print ('hiddenDims :',hidden_dims)
+    # print ('hiddenDims :',hidden_dims)
 
 
     for idx,hidden_dim in enumerate(hidden_dims):
       i_dim = input_dim if idx==0 else self.params['W' + str(idx)].shape[1]
       self.params['W' + str(idx+1)] = weight_scale * np.random.randn(i_dim, hidden_dim)
       self.params['b'+ str(idx+1)] = np.zeros(hidden_dim)
-      print("index:",idx,"Shape:", self.params['W' + str(idx + 1)].shape)
+
       # self.params['gamma' + str(idx+1)] = np.random.rand()
       # self.params['beta' + str(idx + 1)] = np.random.rand()
 
@@ -215,16 +215,6 @@ class FullyConnectedNet(object):
     data_input = X
     cachedData = {}
 
-    # score1, cache1 = affine_forward(X, w1, b1)
-    #
-    # scoresRelu, cacheRelu = relu_forward(score1)
-    #
-    # scores2, cache2 = affine_forward(scoresRelu, w2, b2)
-    #
-    # scores = scores2
-
-    # print('start-')
-    # print (list(range(self.num_layers - 1)))
     for idx in range(self.num_layers-1):
       itemKey = str(idx + 1)
 
