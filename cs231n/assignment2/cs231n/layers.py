@@ -213,7 +213,6 @@ def batchnorm_backward(dout, cache):
 
   dldVar =  np.sum(dout * gamma *  (x - sample_mean) * (-0.5) * np.power((sample_var+ eps),-1.5),axis=0)
   dldMean = np.sum(-dout * gamma/coeff, axis=0) + dldVar * (-2/N) * np.sum(x-sample_mean,axis=0)
-  # (dldVar * 2 * (x - sample_mean) / N) + (dldMean / N) I don't understand why is this term
   dx = dx + (dldVar * 2 * (x - sample_mean) / N) + (dldMean / N)
 
 
@@ -223,7 +222,6 @@ def batchnorm_backward(dout, cache):
   dgamma = np.sum(xInput * dout, axis=0)
   dbeta = np.sum(dout,axis=0)
 
-  print(x.shape,dx.shape)
 
   return dx, dgamma, dbeta
 
@@ -242,18 +240,21 @@ def batchnorm_backward_alt(dout, cache):
   Inputs / outputs: Same as batchnorm_backward
   """
   dx, dgamma, dbeta = None, None, None
-  #############################################################################
-  # TODO: Implement the backward pass for batch normalization. Store the      #
-  # results in the dx, dgamma, and dbeta variables.                           #
-  #                                                                           #
-  # After computing the gradient with respect to the centered inputs, you     #
-  # should be able to compute gradients with respect to the inputs in a       #
-  # single statement; our implementation fits on a single 80-character line.  #
-  #############################################################################
-  pass
-  #############################################################################
-  #                             END OF YOUR CODE                              #
-  #############################################################################
+
+  x, gamma, beta, eps = cache
+  N = x.shape[0]
+
+  sample_mean_minusX = x- np.mean(x, axis=0)
+  sample_var_plusEps = np.var(x, axis=0) + eps
+
+  xInput = sample_mean_minusX / (np.sqrt(sample_var_plusEps))
+
+  dgamma = np.sum(xInput * dout, axis=0)
+  dbeta = np.sum(dout, axis=0)
+
+  dx = (1. / N) * gamma * (sample_var_plusEps) ** (-1. / 2.) * (N * dout - np.sum(dout, axis=0)
+                                                       - (sample_mean_minusX) * (sample_var_plusEps) ** (-1.0) * np.sum(dout * (sample_mean_minusX),
+                                                                                                   axis=0))
   
   return dx, dgamma, dbeta
 
