@@ -150,24 +150,6 @@ def batchnorm_forward(x, gamma, beta, bn_param):
     running_var = momentum * running_var + (1 - momentum) * sample_var
     cache = x, gamma, beta, eps
 
-
-    #############################################################################
-    # TODO: Implement the training-time forward pass for batch normalization.   #
-    # Use minibatch statistics to compute the mean and variance, use these      #
-    # statistics to normalize the incoming data, and scale and shift the        #
-    # normalized data using gamma and beta.                                     #
-    #                                                                           #
-    # You should store the output in the variable out. Any intermediates that   #
-    # you need for the backward pass should be stored in the cache variable.    #
-    #                                                                           #
-    # You should also use your computed sample mean and variance together with  #
-    # the momentum variable to update the running mean and running variance,    #
-    # storing your result in the running_mean and running_var variables.        #
-    #############################################################################
-    pass
-    #############################################################################
-    #                             END OF YOUR CODE                              #
-    #############################################################################
   elif mode == 'test':
     xInput = (x - running_mean) / (np.sqrt(running_var) + eps)
     out = gamma * xInput + beta
