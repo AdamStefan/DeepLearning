@@ -236,6 +236,10 @@ class FullyConnectedNet(object):
       scores, cache = relu_forward(scores)
       cachedData[itemKey + "_activation"] = cache
 
+      if (self.use_dropout):
+        scores, cache = dropout_forward(scores,self.dropout_param)
+        cachedData[itemKey + "_dropOut"] = cache
+
       data_input = scores
 
 
@@ -273,6 +277,11 @@ class FullyConnectedNet(object):
 
     for i in range(self.num_layers-2,-1,-1):
       itemKey = str(i + 1)
+
+      if self.use_dropout:
+        cache = cachedData[itemKey + "_dropOut"]
+        dx = dropout_backward(dx, cache)
+
 
       cache = cachedData[itemKey+"_activation"]
       dx = relu_backward(dx, cache)
