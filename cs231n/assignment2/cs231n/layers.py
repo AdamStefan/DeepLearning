@@ -305,7 +305,7 @@ def conv_forward_naive(x, w, b, conv_param):
 
   The input consists of N data points, each with C channels, height H and width
   W. We convolve each input with F different filters, where each filter spans
-  all C channels and has height HH and width HH.
+  all C channels and has height HH and width WW.
 
   Input:
   - x: Input data of shape (N, C, H, W)
@@ -323,11 +323,61 @@ def conv_forward_naive(x, w, b, conv_param):
   - cache: (x, w, b, conv_param)
   """
   out = None
+  F = w.shape[0]  #F represents the number of Filters
+  C = w.shape[1]  #C represents the number of Channel on Filter
+
+  HH = w.shape [2] # splatial Height of filter
+  WW = w.shape[3]  # splatial Width of filter
+
+  N = x.shape[0]   #number of samples
+
+
+  stride = conv_param['stride']
+  pad = conv_param['pad']
+
+
+
+  print(b.shape)
+  print(stride,pad,WW,HH)
+
+  outputSizeWidth = int(((x.shape[3] + 2 * pad)  - WW) / stride + 1)
+  outputSizeHeight = int(((x.shape[2]+ 2* pad) - HH) / stride + 1)
+
+  print ('OutputDimensions',outputSizeWidth,outputSizeHeight)
+  out = np.zeros((N,F,outputSizeHeight,outputSizeWidth))
+
+  for sample_index in range(N):
+    # The Weight for F Filter is
+    for filter in range(F): # for each Filter
+
+      currentInput = np.pad(x[sample_index],pad_width=pad,mode='constant')
+      # activationMap = np.zeros((outputSizeHeight,outputSizeWidth))
+      # print(activationMap.shape)
+      wPerFilterPerChannel = w[filter] # each filter contains C matrixes of HH * WW dimensions
+
+      for i in range(outputSizeWidth):
+        for j in range(outputSizeHeight):
+          resultForFilter = np.zeros((HH,WW))
+          for channel in range(C):
+            dataToCompute = currentInput[channel][j * stride: j * stride + HH, i * stride: i * stride + WW]
+            print('X shape',dataToCompute.shape, "W shape",wPerFilterPerChannel.shape)
+            resultForFilter += dataToCompute  * wPerFilterPerChannel[channel] + b[filter]
+            print(resultForFilter.shape)
+          print('Dimension of block', out[sample_index, filter][j: j + HH, i: i + WW].shape)
+          out[sample_index,filter][j: j+HH, i: i+WW] = resultForFilter
+
+
+
+
+
+
+
+
   #############################################################################
   # TODO: Implement the convolutional forward pass.                           #
   # Hint: you can use the function np.pad for padding.                        #
   #############################################################################
-  pass
+  # pass
   #############################################################################
   #                             END OF YOUR CODE                              #
   #############################################################################
