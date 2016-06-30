@@ -125,7 +125,7 @@ class FullyConnectedNet(object):
 
   def __init__(self, hidden_dims, input_dim=3*32*32, num_classes=10,
                dropout=0, use_batchnorm=False, reg=0.0,
-               weight_scale=1e-2, dtype=np.float32, seed=None):
+               weight_scale=1e-2, dtype=np.float32, seed=None, useXavierInitialization=False):
     """
     Initialize a new FullyConnectedNet.
     
@@ -158,7 +158,11 @@ class FullyConnectedNet(object):
 
     for idx,hidden_dim in enumerate(hidden_dims):
       i_dim = input_dim if idx==0 else self.params['W' + str(idx)].shape[1]
-      self.params['W' + str(idx+1)] = weight_scale * np.random.randn(i_dim, hidden_dim)
+      if useXavierInitialization:
+        self.params['W' + str(idx+1)] = np.sqrt(i_dim/2)  * np.random.randn(i_dim, hidden_dim)
+      else:
+        self.params['W' + str(idx + 1)] = weight_scale * np.random.randn(i_dim, hidden_dim)
+
       self.params['b'+ str(idx+1)] = np.zeros(hidden_dim)
 
       if (use_batchnorm) :
