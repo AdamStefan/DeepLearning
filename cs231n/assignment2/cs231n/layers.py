@@ -516,7 +516,7 @@ def max_pool_backward_naive(dout, cache):
 
   dx = np.zeros_like(x)
 
-
+  # iterate to all items
   for sample_index in range(N):
     for activationFilter_index in range(F):
       for poolOutput_row in range(outputSizeHeight):
