@@ -337,50 +337,28 @@ def conv_forward_naive(x, w, b, conv_param):
 
 
 
-  print(b.shape)
-  print(stride,pad,WW,HH)
-
   outputSizeWidth = int(((x.shape[3] + 2 * pad)  - WW) / stride + 1)
   outputSizeHeight = int(((x.shape[2]+ 2* pad) - HH) / stride + 1)
 
-  print ('OutputDimensions',outputSizeWidth,outputSizeHeight)
   out = np.zeros((N,F,outputSizeHeight,outputSizeWidth))
+  xPadded = np.pad(x,((0,0),(0,0),(1,1),(1,1)), mode='constant', constant_values=0)
+
 
   for sample_index in range(N):
     # The Weight for F Filter is
     for filter in range(F): # for each Filter
-
-      currentInput = np.pad(x[sample_index],pad_width=pad,mode='constant')
-      # activationMap = np.zeros((outputSizeHeight,outputSizeWidth))
-      # print(activationMap.shape)
       wPerFilterPerChannel = w[filter] # each filter contains C matrixes of HH * WW dimensions
 
       for i in range(outputSizeWidth):
         for j in range(outputSizeHeight):
-          resultForFilter = np.zeros((HH,WW))
+          resultForFilter = 0
           for channel in range(C):
-            dataToCompute = currentInput[channel][j * stride: j * stride + HH, i * stride: i * stride + WW]
-            print('X shape',dataToCompute.shape, "W shape",wPerFilterPerChannel.shape)
-            resultForFilter += dataToCompute  * wPerFilterPerChannel[channel] + b[filter]
-            print(resultForFilter.shape)
-          print('Dimension of block', out[sample_index, filter][j: j + HH, i: i + WW].shape)
-          out[sample_index,filter][j: j+HH, i: i+WW] = resultForFilter
+            dataToCompute = xPadded[sample_index,channel][j * stride: j * stride + HH, i * stride: i * stride + WW]
+            resultForFilter += np.sum(dataToCompute  * wPerFilterPerChannel[channel])
+
+          out[sample_index,filter][j , i] = resultForFilter + b[filter]
 
 
-
-
-
-
-
-
-  #############################################################################
-  # TODO: Implement the convolutional forward pass.                           #
-  # Hint: you can use the function np.pad for padding.                        #
-  #############################################################################
-  # pass
-  #############################################################################
-  #                             END OF YOUR CODE                              #
-  #############################################################################
   cache = (x, w, b, conv_param)
   return out, cache
 
@@ -393,19 +371,72 @@ def conv_backward_naive(dout, cache):
   - dout: Upstream derivatives.
   - cache: A tuple of (x, w, b, conv_param) as in conv_forward_naive
 
+  - dout (N, K Filters, output height, output width)
+
   Returns a tuple of:
   - dx: Gradient with respect to x
   - dw: Gradient with respect to w
   - db: Gradient with respect to b
   """
   dx, dw, db = None, None, None
-  #############################################################################
-  # TODO: Implement the convolutional backward pass.                          #
-  #############################################################################
-  pass
-  #############################################################################
-  #                             END OF YOUR CODE                              #
-  #############################################################################
+
+  x, w, b, conv_param = cache
+
+  K = dout.shape[1]
+  N = dout.shape[0]
+  C = x.shape[1]
+  sample_rows = x.shape[2]
+  sample_columns = x.shape[3]
+  output_width = dout.shape[3]
+  output_height = dout.shape[2]
+
+  filter_width = w.shape[3]
+  filter_height = w.shape[2]
+
+
+  stride = conv_param['stride']
+  pad = conv_param['pad']
+
+  dxLocal = np.zeros((N,C,sample_rows,sample_columns))
+  db = np.zeros_like(b)
+  dw = np.zeros_like(w)
+
+
+  for sample_index in range(N):
+    for channel_index in range(C):
+      for row in range(sample_rows):
+        for column in range(sample_columns):
+          for f in range (K):
+            for filterActivationRow_index in range(output_height):
+              for filterActivationColumn_index in range(output_width):
+                wRow = row + pad - (filterActivationRow_index * stride)
+                wColumn = column + pad - (filterActivationColumn_index * stride)
+                if wRow>=0 and wRow <  filter_height and wColumn>=0 and wColumn<filter_width :
+                  dxLocal[sample_index,channel_index,row,column] += dout[sample_index,f,filterActivationRow_index,filterActivationColumn_index] * w[f,channel_index,wRow,wColumn]
+
+  for f in range(K):
+    for sample_index in range(N):
+      for filterRow_index in range(output_height):
+        for filterColumn_index in range(output_width):
+          db[f]+=dout[sample_index,f,filterRow_index,filterColumn_index]
+
+  for sample_index in range(N):
+    for f in range(K):
+      for channel_index in range(C):
+        for filterRow_index in range(filter_height):
+          for filterColumn_index in range(filter_width):
+            for filterActivationRow_index in range(output_height):
+              for filterActivationColumn_index in range(output_width):
+
+                rowXIndex = filterActivationRow_index * stride + filterRow_index -pad
+                colXIndex = filterActivationColumn_index * stride + filterColumn_index -pad
+
+                if rowXIndex >= 0 and rowXIndex < sample_rows and colXIndex >= 0 and colXIndex < sample_columns:
+                  dw[f, channel_index, filterRow_index, filterColumn_index] += x[sample_index,channel_index,rowXIndex,colXIndex] * dout[sample_index, f,filterActivationRow_index,filterActivationColumn_index]
+
+
+
+  dx = dxLocal
   return dx, dw, db
 
 
