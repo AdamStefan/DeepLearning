@@ -456,13 +456,33 @@ def max_pool_forward_naive(x, pool_param):
   - cache: (x, pool_param)
   """
   out = None
-  #############################################################################
-  # TODO: Implement the max pooling forward pass                              #
-  #############################################################################
-  pass
-  #############################################################################
-  #                             END OF YOUR CODE                              #
-  #############################################################################
+
+
+  pool_width = pool_param['pool_width']
+  pool_height = pool_param['pool_height']
+  stride = pool_param['stride']
+
+  sample_width = x.shape[3]
+  sample_height = x.shape[2]
+  N = x.shape[0]
+  F = x.shape[1]
+
+  outputSizeWidth = int((sample_width  - pool_width) / stride + 1)
+  outputSizeHeight = int((sample_height - pool_height) / stride + 1)
+
+
+
+  out = np.zeros((N, F, outputSizeHeight, outputSizeWidth))
+
+  for sample_index in range(N):
+    for activationFilter_index in range(F):
+      for poolOutput_row in range(outputSizeHeight):
+        for poolOutput_column in range(outputSizeWidth):
+          dataToCompute = x[sample_index, activationFilter_index][poolOutput_row * stride: poolOutput_row * stride + pool_height, poolOutput_column * stride: poolOutput_column * stride + pool_width]
+          out[sample_index,activationFilter_index][poolOutput_row,poolOutput_column] = np.max(dataToCompute)
+
+
+
   cache = (x, pool_param)
   return out, cache
 
@@ -479,13 +499,36 @@ def max_pool_backward_naive(dout, cache):
   - dx: Gradient with respect to x
   """
   dx = None
-  #############################################################################
-  # TODO: Implement the max pooling backward pass                             #
-  #############################################################################
-  pass
-  #############################################################################
-  #                             END OF YOUR CODE                              #
-  #############################################################################
+
+  x, pool_param = cache
+
+  pool_width = pool_param['pool_width']
+  pool_height = pool_param['pool_height']
+  stride = pool_param['stride']
+
+  sample_width = x.shape[3]
+  sample_height = x.shape[2]
+  N = x.shape[0]
+  F = x.shape[1]
+
+  outputSizeWidth = int((sample_width - pool_width) / stride + 1)
+  outputSizeHeight = int((sample_height - pool_height) / stride + 1)
+
+  dx = np.zeros_like(x)
+
+
+  for sample_index in range(N):
+    for activationFilter_index in range(F):
+      for poolOutput_row in range(outputSizeHeight):
+        for poolOutput_column in range(outputSizeWidth):
+          dataToCompute = x[sample_index, activationFilter_index][
+                          poolOutput_row * stride: poolOutput_row * stride + pool_height,
+                          poolOutput_column * stride: poolOutput_column * stride + pool_width]
+
+          arguments = np.unravel_index(np.argmax(dataToCompute), dataToCompute.shape)
+          dx[sample_index, activationFilter_index][poolOutput_row * stride + arguments[0], poolOutput_column * stride +arguments[1]] += dout[sample_index,activationFilter_index,poolOutput_row,poolOutput_column]
+
+
   return dx
 
 
