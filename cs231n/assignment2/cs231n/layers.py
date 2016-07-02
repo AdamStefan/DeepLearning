@@ -22,8 +22,7 @@ def affine_forward(x, w, b):
   - cache: (x, w, b)
   """
   xInput = x.reshape(x.shape[0],-1)
-  # print (x.shape)
-  # out  = None
+   # out  = None
   out = xInput.dot(w) + b
 
   cache = (x, w, b)
@@ -341,7 +340,7 @@ def conv_forward_naive(x, w, b, conv_param):
   outputSizeHeight = int(((x.shape[2]+ 2* pad) - HH) / stride + 1)
 
   out = np.zeros((N,F,outputSizeHeight,outputSizeWidth))
-  xPadded = np.pad(x,((0,0),(0,0),(1,1),(1,1)), mode='constant', constant_values=0)
+  xPadded = np.pad(x,((0,0),(0,0),(pad,pad),(pad,pad)), mode='constant', constant_values=0)
 
 
   for sample_index in range(N):
