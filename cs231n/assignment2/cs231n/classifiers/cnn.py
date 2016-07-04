@@ -81,8 +81,6 @@ class ThreeLayerConvNet(object):
     pool_param = {'pool_height': 2, 'pool_width': 2, 'stride': 2}
 
     scores, cache1 = conv_forward_fast(X,W1,b1, conv_param)
-    # scores, cache1 = conv_forward_naive(X, W1, b1, conv_param)
-
     scores , cacheRelu1 = relu_forward(scores)
     scores , cachePool = max_pool_forward_fast(scores,pool_param)
     scores, cache2 = affine_forward(scores,W2,b2)
@@ -98,6 +96,8 @@ class ThreeLayerConvNet(object):
     loss, dx = softmax_loss(scores, y)
 
     loss += 0.5 * self.reg * (np.sum(W3 * W3) + np.sum(W2 * W2) + np.sum(W1 * W1))
+
+    # conv - relu - 2x2 max pool - affine - relu - affine - softmax
 
     dx, dw3, db3 = affine_backward(dx, cache3)
     grads['W3'] = dw3 + W3 * self.reg
@@ -116,24 +116,6 @@ class ThreeLayerConvNet(object):
     dx, dw1, db1 = conv_backward_fast(dx, cache1)
     grads['W1'] = dw1 + W1 * self.reg
     grads['b1'] = db1
-
-
-
-
-
-
-
-
-    ############################################################################
-    # TODO: Implement the backward pass for the three-layer convolutional net, #
-    # storing the loss and gradients in the loss and grads variables. Compute  #
-    # data loss using softmax, and make sure that grads[k] holds the gradients #
-    # for self.params[k]. Don't forget to add L2 regularization!               #
-    ############################################################################
-    pass
-    ############################################################################
-    #                             END OF YOUR CODE                             #
-    ############################################################################
     
     return loss, grads
   

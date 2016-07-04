@@ -553,21 +553,15 @@ def spatial_batchnorm_forward(x, gamma, beta, bn_param):
   - out: Output data, of shape (N, C, H, W)
   - cache: Values needed for the backward pass
   """
-  out, cache = None, None
 
-  #############################################################################
-  # TODO: Implement the forward pass for spatial batch normalization.         #
-  #                                                                           #
-  # HINT: You can implement spatial batch normalization using the vanilla     #
-  # version of batch normalization defined above. Your implementation should  #
-  # be very short; ours is less than five lines.                              #
-  #############################################################################
-  pass
-  #############################################################################
-  #                             END OF YOUR CODE                              #
-  #############################################################################
+  N, C, H, W = x.shape
+
+  x = np.rollaxis(x, 1, 4)
+  out, cache = batchnorm_forward(x.reshape(N * H * W, C), gamma, beta, bn_param)
+  out = np.rollaxis(out.reshape(x.shape), 3, 1)
 
   return out, cache
+
 
 
 def spatial_batchnorm_backward(dout, cache):
@@ -585,19 +579,18 @@ def spatial_batchnorm_backward(dout, cache):
   """
   dx, dgamma, dbeta = None, None, None
 
-  #############################################################################
-  # TODO: Implement the backward pass for spatial batch normalization.        #
-  #                                                                           #
-  # HINT: You can implement spatial batch normalization using the vanilla     #
-  # version of batch normalization defined above. Your implementation should  #
-  # be very short; ours is less than five lines.                              #
-  #############################################################################
-  pass
-  #############################################################################
-  #                             END OF YOUR CODE                              #
-  #############################################################################
+  N, C, H, W = dout.shape
+
+  outroll = np.rollaxis(dout, 1, 4)
+  # print(outroll.shape,N, C, H, W)
+  outroll_newShape = outroll.reshape(N * H * W, C)
+  dx, dgamma, dbeta = batchnorm_backward_alt(outroll_newShape, cache)
+  tmp = dx.reshape(outroll.shape)
+  dx = np.rollaxis(tmp, 3, 1)
 
   return dx, dgamma, dbeta
+
+
   
 
 def svm_loss(x, y):
