@@ -91,6 +91,22 @@ def relu_backward(dout, cache):
   return dx
 
 
+def leakyRelu_forward(x):
+  out = np.maximum(0.01, x)
+
+  cache = x
+  return out, cache
+
+
+def leakyRelu_backward(dout, cache):
+  dx, x = None, cache
+  tmp = np.ones_like(dout)
+  tmp = tmp * 0.01
+  tmp[x > 0] = 1
+  dx = dout * tmp
+  return dx
+
+
 def batchnorm_forward(x, gamma, beta, bn_param):
   """
   Forward pass for batch normalization.
@@ -187,7 +203,7 @@ def batchnorm_backward(dout, cache):
   sample_var = np.var(x, axis=0)
 
   coeff = (np.sqrt(sample_var + eps) )
-  print (coeff.shape)
+  # print (coeff.shape)
 
   dx = (dout /coeff) * gamma
   N = x.shape[0]
@@ -563,7 +579,6 @@ def spatial_batchnorm_forward(x, gamma, beta, bn_param):
   return out, cache
 
 
-
 def spatial_batchnorm_backward(dout, cache):
   """
   Computes the backward pass for spatial batch normalization.
@@ -590,8 +605,6 @@ def spatial_batchnorm_backward(dout, cache):
 
   return dx, dgamma, dbeta
 
-
-  
 
 def svm_loss(x, y):
   """

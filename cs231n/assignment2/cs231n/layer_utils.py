@@ -91,3 +91,62 @@ def conv_relu_pool_backward(dout, cache):
   dx, dw, db = conv_backward_fast(da, conv_cache)
   return dx, dw, db
 
+
+
+def conv_batch_relu_pool_forward(x, w, b, oParams, reluType = 'Standard'):
+  conv_param, pool_params, gamma, beta, bn_param = oParams
+  scores, cacheCnn = conv_forward_fast(x, w, b, conv_param)
+  scores, cacheBatch =  spatial_batchnorm_forward(scores, gamma, beta, bn_param)
+
+
+  if (reluType == 'LeakyRelu'):
+    scores, cacheRelu = leakyRelu_forward(scores)
+  else:
+    scores, cacheRelu = relu_forward(scores)
+
+  scores, cachePool = max_pool_forward_fast(scores, pool_params)
+  cache = cacheCnn, cacheRelu, cachePool , reluType, cacheBatch
+
+  return scores , cache
+
+
+def conv_batch_relu_pool_backward(dout, cache):
+  cacheCnn, cacheRelu, cachePool, reluType, cacheBatch = cache
+
+  dx = max_pool_backward_fast(dout, cachePool)
+  if (reluType == 'LeakyRelu'):
+    dx = leakyRelu_backward(dx, cacheRelu)
+  else:
+    dx = relu_backward(dx, cacheRelu)
+
+  dx, dgamma, dbeta = spatial_batchnorm_backward(dx,cacheBatch)
+  dx, dw, db = conv_backward_fast(dx, cacheCnn)
+
+  return dx, dw, db , dgamma, dbeta
+
+
+def affine_batch_relu_forward(x, w, b, oParam, reluType = 'Standard'):
+  gamma, beta, bn_param = oParam
+  scores, cacheAffine = affine_forward(x,w,b)
+  scores, cacheBatch = batchnorm_forward(scores,gamma,beta,bn_param)
+
+  if (reluType == 'LeakyRelu'):
+    scores, cacheRelu = leakyRelu_forward(scores)
+  else:
+    scores, cacheRelu = relu_forward(scores)
+
+  cache = cacheAffine,cacheBatch,cacheRelu,reluType
+  return scores, cache
+
+
+def affine_batch_relu_backward(dout, cache):
+  cacheAffine, cacheBatch, cacheRelu, reluType = cache
+  if (reluType == 'LeakyRelu'):
+    dx = leakyRelu_backward(dout,cacheRelu)
+  else:
+    dx = relu_backward(dout, cacheRelu)
+
+  dx, dgamma, dbeta = batchnorm_backward(dx, cacheBatch)
+  dx,dw,db = affine_backward(dx,cacheAffine)
+
+  return dx,dw,db,dgamma,dbeta
