@@ -1,4 +1,4 @@
-import cPickle as pickle
+import _pickle as pickle
 import numpy as np
 import os
 from scipy.misc import imread
@@ -6,9 +6,9 @@ from scipy.misc import imread
 def load_CIFAR_batch(filename):
   """ load single batch of cifar """
   with open(filename, 'rb') as f:
-    datadict = pickle.load(f)
-    X = datadict['data']
-    Y = datadict['labels']
+    datadict = pickle.load(f, encoding='bytes')
+    X = datadict[b'data']
+    Y = datadict[b'labels']
     X = X.reshape(10000, 3, 32, 32).transpose(0,2,3,1).astype("float")
     Y = np.array(Y)
     return X, Y
@@ -104,7 +104,7 @@ def load_tiny_imagenet(path, dtype=np.float32, subtract_mean=True):
   # Use words.txt to get names for each class
   with open(os.path.join(path, 'words.txt'), 'r') as f:
     wnid_to_words = dict(line.split('\t') for line in f)
-    for wnid, words in wnid_to_words.iteritems():
+    for wnid, words in wnid_to_words.items():
       wnid_to_words[wnid] = [w.strip() for w in words.split(',')]
   class_names = [wnid_to_words[wnid] for wnid in wnids]
 
@@ -113,7 +113,7 @@ def load_tiny_imagenet(path, dtype=np.float32, subtract_mean=True):
   y_train = []
   for i, wnid in enumerate(wnids):
     if (i + 1) % 20 == 0:
-      print 'loading training data for synset %d / %d' % (i + 1, len(wnids))
+      print ('loading training data for synset %d / %d' % (i + 1, len(wnids)))
     # To figure out the filenames we need to open the boxes file
     boxes_file = os.path.join(path, 'train', wnid, '%s_boxes.txt' % wnid)
     with open(boxes_file, 'r') as f:
@@ -213,7 +213,7 @@ def load_models(models_dir):
   for model_file in os.listdir(models_dir):
     with open(os.path.join(models_dir, model_file), 'rb') as f:
       try:
-        models[model_file] = pickle.load(f)['model']
+        models[model_file] = pickle.load(f, encoding='bytes')['model']
       except pickle.UnpicklingError:
         continue
   return models
