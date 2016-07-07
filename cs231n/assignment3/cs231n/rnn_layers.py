@@ -114,12 +114,25 @@ def rnn_backward(dh, cache):
   dx, dh0, dWx, dWh, db = None, None, None, None, None
 
   N, T, H = dh.shape
+  firstCacheItem = cache[0]
+  _, xFirst, _, _, _, _ = firstCacheItem
+  dx = np.zeros((N,T,xFirst.shape[1]))
+  dWx,dWh,db =0,0,0
+
+  dh = dh.copy() # tricky !!!!! avoid modification of the input because it will affect the other methods which depends on the initial value of the input
 
   for step in reversed(range(T)):
     cacheItem = cache[step]
-    dx[:,step,:], dprev_h, dWx, dWh, db = rnn_step_backward(dh[:,step,:],cacheItem)
+    dxCurrent, dprev_h, dWxCurrent, dWhCurrent, dbCurrent = rnn_step_backward(dh[:,step,:],cacheItem)
+    dx[:, step, :] = dxCurrent
+    if (step > 0) :
+      dh[:,step-1,:]+= dprev_h
+    else:
+      dh0 = dprev_h
 
-
+    dWx+=dWxCurrent
+    dWh += dWhCurrent
+    db += dbCurrent
 
 
   return dx, dh0, dWx, dWh, db
@@ -141,15 +154,9 @@ def word_embedding_forward(x, W):
   - cache: Values needed for the backward pass
   """
   out, cache = None, None
-  ##############################################################################
-  # TODO: Implement the forward pass for word embeddings.                      #
-  #                                                                            #
-  # HINT: This should be very simple.                                          #
-  ##############################################################################
-  pass
-  ##############################################################################
-  #                               END OF YOUR CODE                             #
-  ##############################################################################
+  out = W[x]
+  cache = x,W
+
   return out, cache
 
 
@@ -169,15 +176,24 @@ def word_embedding_backward(dout, cache):
   - dW: Gradient of word embedding matrix, of shape (V, D).
   """
   dW = None
-  ##############################################################################
-  # TODO: Implement the backward pass for word embeddings.                     #
-  #                                                                            #
-  # HINT: Look up the function np.add.at                                       #
-  ##############################################################################
-  pass
-  ##############################################################################
-  #                               END OF YOUR CODE                             #
-  ##############################################################################
+
+  x, W = cache
+  dW = np.zeros_like(W)
+
+  np.add.at(dW, x, dout)
+
+  # detailed implementation
+
+  # N, T, D = dout.shape
+  # V, D = W.shape
+
+  # for wordIndex in range(V):
+  #   for code in range(D):
+  #     for sampleIndex in range(N):
+  #       for t in range(T):
+  #         if (wordIndex == x[sampleIndex,t]):
+  #           dW[wordIndex,code]+=dout[sampleIndex,t,code]
+
   return dW
 
 
