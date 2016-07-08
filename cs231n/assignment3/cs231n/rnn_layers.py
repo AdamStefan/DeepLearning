@@ -231,15 +231,20 @@ def lstm_step_forward(x, prev_h, prev_c, Wx, Wh, b):
   - next_c: Next cell state, of shape (N, H)
   - cache: Tuple of values needed for backward pass.
   """
+
+  N,H = prev_h.shape
   next_h, next_c, cache = None, None, None
-  #############################################################################
-  # TODO: Implement the forward pass for a single timestep of an LSTM.        #
-  # You may want to use the numerically stable sigmoid implementation above.  #
-  #############################################################################
-  pass
-  ##############################################################################
-  #                               END OF YOUR CODE                             #
-  ##############################################################################
+  firstPart = x.dot(Wx) + prev_h.dot(Wh) + b
+  i = sigmoid(firstPart[:,:H])
+  f = sigmoid(firstPart[:,H:2*H])
+  o = sigmoid(firstPart[:, 2*H:3*H])
+  g = np.tanh(firstPart[:, 3*H:])
+
+  next_c = f * prev_c + i * g
+  next_h = o * np.tanh(next_c)
+
+  cache = (x, prev_h.copy(), prev_c.copy(), i, f, o, g, next_h, next_c, Wx, Wh)
+
   
   return next_h, next_c, cache
 
@@ -262,17 +267,35 @@ def lstm_step_backward(dnext_h, dnext_c, cache):
   - db: Gradient of biases, of shape (4H,)
   """
   dx, dh, dc, dWx, dWh, db = None, None, None, None, None, None
-  #############################################################################
-  # TODO: Implement the backward pass for a single timestep of an LSTM.       #
-  #                                                                           #
-  # HINT: For sigmoid and tanh you can compute local derivatives in terms of  #
-  # the output value from the nonlinearity.                                   #
-  #############################################################################
-  pass
-  ##############################################################################
-  #                               END OF YOUR CODE                             #
-  ##############################################################################
 
+
+
+  (x, prev_h, prev_c, a_i, a_f, a_o, a_g, next_h, next_c, Wx, Wh) = cache
+  N, H = dnext_h.shape
+  da = np.zeros((N,4*H))
+
+
+  dnext_c = dnext_c.copy()
+  dnext_c += dnext_h * a_o * (1 - np.tanh(next_c) ** 2)
+  da_o = np.tanh(next_c) * dnext_h
+
+  da_f = dnext_c * prev_c
+  dprev_c = dnext_c * a_f
+  da_i = dnext_c * a_g
+  da_g = dnext_c * a_i
+
+
+  da[:, 3 * H:4 * H] = (1 - np.square(a_g)) * da_g
+  da[:, 2 * H:3 * H] = (1 - a_o) * a_o * da_o
+  da[:, H:2 * H] = (1 - a_f) * a_f * da_f
+  da[:, 0:H] = (1 - a_i) * a_i * da_i
+
+
+  db = np.sum(da, axis=0)
+  dx = da.dot(Wx.T)
+  dWx = x.T.dot(da)
+  dprev_h = da.dot(Wh.T)
+  dWh = prev_h.T.dot(da)
   return dx, dprev_h, dprev_c, dWx, dWh, db
 
 
