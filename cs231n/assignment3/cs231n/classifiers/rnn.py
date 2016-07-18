@@ -123,7 +123,10 @@ class CaptioningRNN(object):
 
     x, cacheEmbedding1 = word_embedding_forward(captions_in, W_embed)
 
-    h, cacheRnn = rnn_forward (x, h0, Wx, Wh, b)
+    if self.cell_type == 'lstm':
+      h, cacheRnn = lstm_forward(x, h0, Wx, Wh, b)
+    else:
+      h, cacheRnn = rnn_forward (x, h0, Wx, Wh, b)
     outputsAffine,cacheAffine = temporal_affine_forward(h,W_vocab,b_vocab)
 
     loss, dx = temporal_softmax_loss(outputsAffine,captions_out, mask)
@@ -136,7 +139,10 @@ class CaptioningRNN(object):
     grads['b_vocab'] = db_vocab
 
     # dx = N, T, V
-    dx, dh0, dWx, dWh, db= rnn_backward(dh,cacheRnn)
+    if self.cell_type == 'lstm':
+      dx, dh0, dWx, dWh, db = lstm_backward(dh, cacheRnn)
+    else:
+      dx, dh0, dWx, dWh, db= rnn_backward(dh,cacheRnn)
     grads['Wx'] = dWx
     grads['Wh'] = dWh
     grads['b'] = db
@@ -217,12 +223,17 @@ class CaptioningRNN(object):
     hprev, _ = affine_forward(features, W_proj, b_proj)
     initialInput = np.zeros((N,1), dtype=np.int32)
     initialInput[:] = self._start
+    prev_c = np.zeros_like(hprev)
 
 
     for i in range(max_length):
       x,_ = word_embedding_forward(initialInput, W_embed) # initial input NXT where T = 1
       x = np.reshape(x,(N,-1))
-      hprev,_ = rnn_step_forward(x,hprev,Wx,Wh,b)
+      if self.cell_type == 'lstm':
+        hprev, prev_c, _ = lstm_step_forward(x, hprev,prev_c, Wx, Wh, b)
+      # lstm_step_forward(x, prev_h, prev_c, Wx, Wh, b)
+      else:
+        hprev,_ = rnn_step_forward(x,hprev,Wx,Wh,b)
       wordToVocab,_ = affine_forward(hprev, W_vocab, b_vocab)
       captions[:,i]= np.argmax(wordToVocab,axis=1)
       initialInput = captions[:,i]

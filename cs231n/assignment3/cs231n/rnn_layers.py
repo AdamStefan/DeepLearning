@@ -322,14 +322,20 @@ def lstm_forward(x, h0, Wx, Wh, b):
   - cache: Values needed for the backward pass.
   """
   h, cache = None, None
-  #############################################################################
-  # TODO: Implement the forward pass for an LSTM over an entire timeseries.   #
-  # You should use the lstm_step_forward function that you just defined.      #
-  #############################################################################
-  pass
-  ##############################################################################
-  #                               END OF YOUR CODE                             #
-  ##############################################################################
+  cache = []
+  N,T,D = x.shape
+  H = h0.shape[1]
+  prev_h = h0
+  prev_c = np.zeros_like(h0)
+  h = np.zeros((N,T,H))
+
+  # stm_step_forward(x, prev_h, prev_c, Wx, Wh, b):
+  # x, prev_h, prev_c, Wx, Wh, b
+  for t in range(T):
+    prev_h, prev_c, cacheItem = lstm_step_forward(x[:,t,:], prev_h, prev_c, Wx, Wh, b)
+    h[:,t,:] = prev_h
+    cache.append(cacheItem)
+
 
   return h, cache
 
@@ -358,6 +364,31 @@ def lstm_backward(dh, cache):
   ##############################################################################
   #                               END OF YOUR CODE                             #
   ##############################################################################
+
+  N, T, H = dh.shape
+
+  dprev_c = np.zeros((N, H))
+
+  xFirst, _, _, _, _, _, _, _, _, _, _ = cache[0]
+  dx = np.zeros((N, T, xFirst.shape[1]))
+
+  dWx, dWh, db = 0, 0, 0
+  dh = dh.copy()  # tricky !!!!! avoid modification of the input because it will affect the other methods which depends on the initial value of the input
+
+
+  for t in reversed(range(T)):
+    cacheItem = cache[t]
+    # dx, dprev_h, dprev_c, dWx, dWh, db
+    dxStep, dprev_h, dprev_c, dWxStep, dWhStep, dbStep = lstm_step_backward(dh[:,t,:],dprev_c,cacheItem)
+    dx[:, t,:] = dxStep
+    if (t > 0):
+      dh[:, t-1, :] += dprev_h
+    else:
+      dh0 = dprev_h
+
+    dWx += dWxStep
+    dWh += dWhStep
+    db += dbStep
   
   return dx, dh0, dWx, dWh, db
 
