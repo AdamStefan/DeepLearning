@@ -1,0 +1,15 @@
+﻿################################################################################
+# This .gitignore file was automatically created by Microsoft(R) Visual Studio.
+################################################################################
+
+/boltzman machine/MNIST_data
+/boltzman machine/RBM_logs/MNIST_Bernoulli
+/boltzman machine/.ipynb_checkpoints
+/cs231n/assignment1/.ipynb_checkpoints
+/cs231n/assignment2/.ipynb_checkpoints
+/cs231n/assignment3/.ipynb_checkpoints
+/MNIST_data
+/RBM_logs/MNIST_Bernoulli
+/boltzman machine/model/__pycache__
+/cs231n/assignment1/cs231n/datasets
+/cs231n/assignment2/cs231n/datasets
