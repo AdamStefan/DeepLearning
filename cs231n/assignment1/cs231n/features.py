@@ -48,7 +48,7 @@ def extract_features(imgs, feature_fns, verbose=False):
       imgs_features[i, idx:next_idx] = feature_fn(imgs[i].squeeze())
       idx = next_idx
     if verbose and i % 1000 == 0:
-      print 'Done extracting features for %d / %d images' % (i, num_images)
+      print ('Done extracting features for %d / %d images' % (i, num_images))
 
   return imgs_features
 

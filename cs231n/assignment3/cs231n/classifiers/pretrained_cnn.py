@@ -80,7 +80,7 @@ class PretrainedCNN(object):
       for k, v in f.iteritems():
         v = np.asarray(v)
         if k in self.params:
-          if verbose: print k, v.shape, self.params[k].shape
+          if verbose: print (k, v.shape, self.params[k].shape)
           if v.shape == self.params[k].shape:
             self.params[k] = v.copy()
           elif v.T.shape == self.params[k].shape:
@@ -91,12 +91,12 @@ class PretrainedCNN(object):
           i = int(k[12:]) - 1
           assert self.bn_params[i]['running_mean'].shape == v.shape
           self.bn_params[i]['running_mean'] = v.copy()
-          if verbose: print k, v.shape
+          if verbose: print (k, v.shape)
         if k.startswith('running_var'):
           i = int(k[11:]) - 1
           assert v.shape == self.bn_params[i]['running_var'].shape
           self.bn_params[i]['running_var'] = v.copy()
-          if verbose: print k, v.shape
+          if verbose: print (k, v.shape)
         
     for k, v in self.params.iteritems():
       self.params[k] = v.astype(self.dtype)

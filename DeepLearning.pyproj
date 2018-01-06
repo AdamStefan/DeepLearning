@@ -5,7 +5,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{56df064b-378c-4ce8-a326-e696cf7833af}</ProjectGuid>
     <ProjectHome />
-    <StartupFile>adversarial examples\mnist_sample.py</StartupFile>
+    <StartupFile>adversarial examples\generative_adversary_example.py</StartupFile>
     <SearchPath />
     <WorkingDirectory>.</WorkingDirectory>
     <OutputPath>.</OutputPath>
@@ -33,6 +33,9 @@
     </Content>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="adversarial examples\generative_adversary_example.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="adversarial examples\mnist_sample.py">
       <SubType>Code</SubType>
     </Compile>
