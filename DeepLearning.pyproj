@@ -5,7 +5,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{56df064b-378c-4ce8-a326-e696cf7833af}</ProjectGuid>
     <ProjectHome />
-    <StartupFile>adversarial examples\generative_adversary_example.py</StartupFile>
+    <StartupFile>reinforcement_learning\agent.py</StartupFile>
     <SearchPath />
     <WorkingDirectory>.</WorkingDirectory>
     <OutputPath>.</OutputPath>
@@ -86,6 +86,10 @@
     <Compile Include="cs231n\assignment3\cs231n\rnn_layers.py" />
     <Compile Include="cs231n\assignment3\cs231n\setup.py" />
     <Compile Include="cs231n\assignment3\cs231n\__init__.py" />
+    <Compile Include="reinforcement_learning\agent.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="reinforcement_learning\__init__.py" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="boltzman machine\model\" />
@@ -101,6 +105,7 @@
     <Folder Include="cs231n\assignment3\cs231n\classifiers" />
     <Folder Include="adversarial examples\" />
     <Folder Include="boltzman machine\" />
+    <Folder Include="reinforcement_learning\" />
   </ItemGroup>
   <Import Project="$(PtvsTargetsFile)" Condition="Exists($(PtvsTargetsFile))" />
   <Import Project="$(MSBuildToolsPath)\Microsoft.Common.targets" Condition="!Exists($(PtvsTargetsFile))" />
