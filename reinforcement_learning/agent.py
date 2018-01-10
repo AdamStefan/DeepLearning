@@ -174,8 +174,8 @@ class Neural_Network():
 
     def save_checkpoint(self, current_iteration):
         """Save all variables of the TensorFlow graph to a checkpoint."""
-
-        self.saver.save(self.sess, save_path=self.experiment_dir, global_step=current_iteration)
+        checkpoint_path = os.path.join(self.experiment_dir,"RL_experiment")
+        self.saver.save(self.sess, save_path= checkpoint_path, global_step=current_iteration)
         print("Saved checkpoint.")
 
     def _build_network(self):
@@ -190,7 +190,7 @@ class Neural_Network():
         self.count_states_increase = tf.assign(self.count_states, self.count_states + 1)
 
         # TensorFlow operation for increasing count_episodes.
-        self.count_episodes_increase = tf.assign(self.count_episodes, self.count_episodes + 1)
+        self.count_episodes_increase = tf.assign(self.count_episodes, self.count_episodes + 1)               
 
         self.q_values = create_conv_model(self.states, self.config, self.num_actions)
         error = tf.losses.mean_squared_error(self.q_values_target * self.actions,self.q_values * self.actions)
@@ -209,6 +209,8 @@ class Neural_Network():
         self.saver = tf.train.Saver()
         self.sess = tf.Session()
         self.load_checkpoint()
+        self.summary = tf.summary.merge_all()
+        
 
     def predict(self, states):
         """
@@ -253,19 +255,26 @@ class Neural_Network():
 
 
 class Replay_Memory():
-    def __init__(self, max_number_of_items, state_size, num_actions):                        
+    def __init__(self, max_number_of_items, state_size, num_actions, last_number_of_steps_to_cumulate_reward):                        
         self.max_number_of_items = max_number_of_items
+        self.last_number_of_steps_to_cumulate_reward = last_number_of_steps_to_cumulate_reward
         self.state_size = state_size
         self.num_actions = num_actions        
         self._datastore=list()
+        self._reward_for_last_steps = 0
         
 
     def add(self, current_state, current_action, current_reward, end_of_life, end_of_episode):
         # in order to replay the actions done in the past we have to save it to our memory
+        self._reward_for_last_steps+=current_reward
         if self.is_full():
             self._datastore.pop(0)           
-        self._datastore.append((current_state,current_action,current_reward,end_of_life,end_of_episode))
+        self._datastore.append((current_state,current_action,current_reward,end_of_life,end_of_episode))        
+        if (len(self._datastore)>self.last_number_of_steps_to_cumulate_reward):
+            self._reward_for_last_steps-=self._datastore[len(self._datastore)-self.last_number_of_steps_to_cumulate_reward-1][2]
 
+    def get_mean_reward(self):
+        return self._reward_for_last_steps/self.last_number_of_steps_to_cumulate_reward
     
     def is_full(self):
         return len(self._datastore)==self.max_number_of_items        
@@ -280,7 +289,6 @@ class Replay_Memory():
         rewards = np.zeros([batch_size],dtype=np.float)                
         end_of_life = np.zeros([batch_size],dtype=np.bool)                
         end_of_scenario = np.zeros([batch_size],dtype=np.bool)                        
-
 
         for index in range(batch_size):            
             current_item = batch_indexes[index]
@@ -318,12 +326,13 @@ class process_configuration:
         self.learning_rate_decay = 0.96
         self.learning_rate_decay_step = 5 * 10000
         self.reward_interval = (-1,1)
+        self.step_intervals_for_logging_cummulated_reward = 1000
         self.net_config = {'conv' :[{'filter_size':3,'channels':16,'pooling_size':2,'stride':2},
                                     {'filter_size':3,'channels':32,'pooling_size':2,'stride':2},
                                     {'filter_size':3,'channels':64,'pooling_size':2,'stride':1}],                                       
                            'fc':[1024,1024,1024,1024]
                            }
-        self.experiment_dir = "C:\\Work\\RL_Experiments\\RL_experiment"
+        self.experiment_dir = "C:\\Work\\RL_Experiments"
        
 
 class Agent:
@@ -338,9 +347,8 @@ class Agent:
         self.model = Neural_Network(config.net_config, self.num_actions, self.frame_processor.get_state_size(),self.config.experiment_dir,self.config.learning_rate_minimum,self.config.learning_rate,self.config.learning_rate_decay, self.config.learning_rate_decay_step)
         self.policy = Epsilon_Greedy_Policy(config.policy_epsilon_start,config.policy_epsilon_end, config.policy_decay_iterations)        
         self.action_names = self.environment.unwrapped.get_action_meanings()
-        self.replay_memmory = Replay_Memory(config.replay_memory_size,self.frame_processor.get_state_size(),self.num_actions)        
-
-        
+        self.replay_memmory = Replay_Memory(config.replay_memory_size,self.frame_processor.get_state_size(),self.num_actions,self.config.step_intervals_for_logging_cummulated_reward)                
+        self.writer = tf.summary.FileWriter(self.config.experiment_dir, self.model.sess.graph)
 
     def get_lives(self):
         """Get the number of lives the agent has in the game-environment."""
@@ -349,7 +357,7 @@ class Agent:
     def run(self, train=True, render = False, number_of_episodes = float('inf')):
         count_episodes = self.model.get_count_episodes()
         count_states = self.model.get_count_states()
-        end_episode = True
+        end_episode = True                  
 
         while count_episodes < number_of_episodes:
             if end_episode:
@@ -378,6 +386,7 @@ class Agent:
             if train: 
                 reward = np.clip(reward,self.config.reward_interval[0],self.config.reward_interval[1])
                 self.replay_memmory.add(current_state,action,reward,end_life,end_episode)
+                
                 if self.replay_memmory.is_full():
                     # Increase the counter for the number of states that have been processed.
                     count_states = self.model.increase_count_states()
@@ -396,6 +405,12 @@ class Agent:
                     self.model.train(states_batch, target_q_values, actions_one_hot_batch, count_states)
                     if count_states % 10000 == 0:
                         self.model.save_checkpoint(count_states)
+                    if count_states % 1000 == 0:
+                        mean_reward = self.replay_memmory.get_mean_reward() 
+                        summary = tf.Summary(value=[tf.Summary.Value(tag="mean_reward",
+                                                         simple_value=mean_reward)])
+                        self.writer.add_summary(summary, count_states)
+                                                         
             if render:
                  self.environment.render()
                  if train == False:
