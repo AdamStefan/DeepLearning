@@ -1,5 +1,5 @@
 Different Deep Learning implementation
- - Convolution Neural Networks (the entire cs231n home assignments)
+ - Convolution Neural Networks (home assignments - stanford cs231n course)
  - Restricted Boltzmann Machine
  - GAN
  - Reinforcements Learning (QNN)
